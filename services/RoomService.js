@@ -5,7 +5,6 @@ function handleCreateRoom(userName) {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 10000);
   const roomId = `${timestamp}-${random}`;
-  room[roomId] = { users: [userName], raceStarted: false, admin: userName };
   return roomId;
 }
 
@@ -27,7 +26,10 @@ function verifyAdmin(roomId, userId) {
 
 function handleUserEntry(roomId, userId) {
   if (rooms.roomId && !rooms[roomId].users.contains(userId)) {
-    rooms[roomId].users.push(userId);
+    if(roomId[roomId].length==0) {
+        room[roomId] = { users: [userName], raceStarted: false, admin: userName };
+    }
+    else rooms[roomId].users.push(userId);
   }
 }
 

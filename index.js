@@ -27,13 +27,17 @@ io.on("connection", (socket) => {
   socket.on("join_room", (data) => {
     if (!isRaceStarted(data.roomId)) {
       handleUserEntry(data.roomId, data.userId);
-      console.log(roomId)
+      console.log(roomId);
       socket.join(data.roomId);
     } else {
       socket.emit("handle_error", {
         message: "The race has already been started :(",
       });
     }
+  });
+  socket.on("create_room", (data) => {
+    const id = handleCreateRoom(data.userId);
+    socket.emit("get_room_id",{id : id});
   });
 
   socket.on("get_race_data", async (data) => {
