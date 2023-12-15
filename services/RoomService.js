@@ -1,11 +1,12 @@
 const rooms = {};
 let winnerArray = [];
 
-function handleCreateRoom(userName) {
+function  handleCreateRoom(userName) {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 10000);
   const roomId = `${timestamp}-${random}`;
-  room[roomId] = { users: [userName], raceStarted: false, admin: userName };
+  rooms[roomId] = [{userName : userName,timestamp : 0,correctWords : 0}];
+  console.log(rooms);
   return roomId;
 }
 
@@ -15,6 +16,8 @@ function isRaceStarted(roomId) {
   } else {
     return false;
   }
+
+  console.log(rooms);
 }
 
 function verifyAdmin(roomId, userId) {
@@ -23,18 +26,34 @@ function verifyAdmin(roomId, userId) {
   } else {
     return false;
   }
+
+  console.log(rooms);
 }
 
 function handleUserEntry(roomId, userId) {
   if (rooms.roomId && !rooms[roomId].users.contains(userId)) {
-    rooms[roomId].users.push(userId);
+    if (roomId[roomId].length == 0) {
+      room[roomId] = { users: [userName], raceStarted: false, admin: userName };
+    } else rooms[roomId].users.push(userId);
   }
+
+  console.log(rooms);
 }
 
-function handleClientData(roomId, userId, data) {
-  if (data.time === 30) {
-    winnerArray = [...winnerArray, data];
-  }
+function handleClientData(roomId, data) {
+  let userDetails = rooms[roomId].find((item,index)=> {
+    return item.userName==data.userName;
+  })
+ if(userDetails===null) {
+  rooms[roomId].push(data);
+ }
+ else {
+   rooms[roomId].forEach(element => {
+    if(element.userName===data.userName) {
+      return 
+    }
+   });
+ }
 }
 
 function handleStartRace(roomId, userId) {

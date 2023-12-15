@@ -11,6 +11,8 @@ const {
   handleUserEntry,
 } = require("./services/RoomService");
 
+const { v4: uuidv4 } = require("uuid");
+
 app.use(cors());
 const server = http.createServer(app);
 
@@ -21,32 +23,66 @@ const io = new Server(server, {
   },
 });
 
+const rooms = new Map();
+
 io.on("connection", (socket) => {
-  console.log("userConnected" + socket.id);
+  console.log("new connection");
+  socket.on("create_room", () => {
+    socket.emit("get_room_id", { id: uuidv4() });
+  });
 
   socket.on("join_room", (data) => {
-    if (!isRaceStarted(data.roomId)) {
-      handleUserEntry(data.roomId, data.userId);
-      console.log(roomId)
+    console.log("hii");
+    if (!rooms.has(data.roomId)) {
       socket.join(data.roomId);
+      rooms.set(data.roomId, {
+        total_participants: 1,
+        participants: [{ name: data.name, cw: 0, speed: 0 }],
+      });
+      socket.emit("room_info", rooms.get(data.roomId));
+      socket.to(data.roomId).emit("room_info", rooms.get(data.roomId));
+    } else if (
+      rooms.has(data.roomId) &&
+      rooms.get(data.roomId).total_participants == 1
+    ) {
+      socket.join(data.roomId);
+      rooms.set(data.roomId, {
+        total_participants: 2,
+        participants: [
+          ...rooms.get(data.roomId).participants,
+          { name: data.name, cw: 0, speed: 0 },
+        ],
+      });
+      socket.emit("room_info", rooms.get(data.roomId));
+      socket.to(data.roomId).emit("room_info", rooms.get(data.roomId));
     } else {
       socket.emit("handle_error", {
-        message: "The race has already been started :(",
+        message: "only 2 people can compete at a time",
       });
     }
   });
 
-  socket.on("get_race_data", async (data) => {
-    if (isRaceStarted(data.roomId)) {
-      handleClientData(data);
-      socket.to(data.roomId).emit("receive_data", data);
-    }
+  socket.on("racing_currently", (data) => {
+    if (!rooms.get(data.roomId)) return;
+    console.log(
+      rooms.get(data.roomId).participants.find((p) => p.name === data.name),
+      data
+    );
+
+    rooms
+      .get(data.roomId)
+      .participants.find((racer) => racer.name === data.name).name = data.name;
+    rooms
+      .get(data.roomId)
+      .participants.find((racer) => racer.name === data.name).cw = data.cw;
+    rooms
+      .get(data.roomId)
+      .participants.find((racer) => racer.name === data.name).speed =
+      data.speed;
+    socket.emit("room_info", rooms.get(data.roomId));
+    socket.to(data.roomId).emit("room_info", rooms.get(data.roomId));
   });
-  socket.on("start_race", (data) => {
-    if (verifyAdmin(data.userId)) {
-      socket.emit("signal_start", { message: "Race will begin in 5 secs" });
-    }
-  });
+
 });
 
 server.listen(8000, () => {
